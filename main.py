@@ -3,6 +3,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium_stealth import stealth
+import logging
+
+logging.basicConfig(filename='app.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 options = webdriver.ChromeOptions()
 
@@ -24,7 +27,7 @@ with webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), op
             fix_hairline=True,
         )
     # Navigate to a webpage
-    driver.get("https://www.exploretock.com/login?continue=%2Fthedabney")
+    driver.get("https://www.exploretock.com/login?continue=%2Fhayato")
 
     # Use XPath to locate elements
     try:
@@ -44,16 +47,20 @@ with webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), op
             except Exception as e:
                 print("Failed to input email and password input")
                 time.sleep(1)
-        print("Successfully login!")
+        logging.debug("Successfully login!")
         # go to dine-in restaurant
         while True:
             try:
+                actions = driver.find_elements("xpath", "//div[contains(@class, 'Consumer-reservationCallToAction')]")
                 books = driver.find_elements("xpath", "//div[contains(@class, 'Consumer-reservationCallToAction')]/a")
-                print(len(books))
+                
                 if(len(books) <= 0):
                     time.sleep(1)
+                    if(len(actions) > 0):
+                        logging.debug("There is no any reservation yet.")
+                        driver.refresh()
                     continue
-                
+                logging.debug("Got books %d", len(books))
                 for book in books:
                     if(book.text == 'Book now'):
                         book.click()
@@ -61,10 +68,9 @@ with webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), op
                         while True:
                             try:                            
                                 soldout = driver.find_elements("xpath", "//div[contains(@class, 'Consumer-resultsListItem is-disabled is-sold-out Consumer-resultsListItem--wide')]")
-                                print(len(soldout))
-                                if(len(soldout) <= 0):
-                                    time.sleep(1)
-                                    continue
+                                # if(len(soldout) <= 0):
+                                #     time.sleep(1)
+                                #     continue
 
                                 try:
                                     booknow = driver.find_element("xpath", "//button[contains(@class, 'Consumer-resultsListItem is-available Consumer-resultsListItem--wide')]")
@@ -74,6 +80,9 @@ with webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), op
                                     break
                                 except Exception as e:
                                     print(e)
+                                    if(len(soldout) <= 0):
+                                        continue
+
                                     break
 
                             except Exception as e:
@@ -85,7 +94,7 @@ with webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), op
                         while True:
                             try:
                                 driver.find_element("xpath", "//button[contains(@type, 'submit')]").click()
-                                break
+                                exit(1)
                             except Exception as e:
                                 print(e)
                                 time.sleep(1)             
